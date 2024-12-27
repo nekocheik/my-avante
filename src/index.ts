@@ -1,6 +1,6 @@
+import axios from 'axios';
 import { ExtensionContext, Uri, window, workspace, WorkspaceEdit } from "coc.nvim";
 import dotenv from 'dotenv';
-import * as https from 'https';
 import * as path from 'path';
 dotenv.config();
 
@@ -22,51 +22,30 @@ class OpenAIService {
     this.apiKey = apiKey;
   }
 
-  private makeRequest(data: any): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'api.openai.com',
-        path: '/v1/chat/completions',
+  private async makeRequest(data: any): Promise<string> {
+    try {
+      const response = await axios({
         method: 'POST',
+        url: OPENAI_CONFIG.baseURL,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
-        }
-      };
-
-      const req = https.request(options, (res) => {
-        let responseData = '';
-
-        res.on('data', (chunk) => {
-          responseData += chunk;
-        });
-
-        res.on('end', () => {
-          if (res.statusCode !== 200) {
-            reject(new Error(`OpenAI API error: ${res.statusCode} - ${responseData}`));
-            return;
-          }
-
-          try {
-            const parsedData = JSON.parse(responseData);
-            if (!parsedData.choices?.[0]?.message?.content) {
-              reject(new Error('Format de réponse OpenAI invalide'));
-              return;
-            }
-            resolve(parsedData.choices[0].message.content.trim());
-          } catch (error) {
-            reject(new Error(`Erreur de parsing JSON: ${error}`));
-          }
-        });
+        },
+        data,
+        timeout: OPENAI_CONFIG.timeout
       });
 
-      req.on('error', (error) => {
-        reject(error);
-      });
+      if (!response.data.choices?.[0]?.message?.content) {
+        throw new Error('Format de réponse OpenAI invalide');
+      }
 
-      req.write(JSON.stringify(data));
-      req.end();
-    });
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Erreur OpenAI API: ${error.response?.status} - ${error.message}`);
+      }
+      throw error;
+    }
   }
 
   async analyzeCode(fileContent: string, fileName: string): Promise<string> {
