@@ -1,7 +1,7 @@
 const { ExtensionContext, Uri, window, workspace, WorkspaceEdit } = require("coc.nvim");
 const dotenv = require('dotenv');
-const fetch = require('node-fetch');
 const path = require('path');
+const https = require('https');
 dotenv.config();
 
 // Configuration OpenAI
@@ -42,39 +42,61 @@ class OpenAIService {
     this.apiKey = apiKey;
   }
 
-  private async makeRequest(data: any): Promise<string> {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), OPENAI_CONFIG.timeout);
-
-      const requestOptions: RequestInit = {
+  private makeRequest(data: any): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const requestData = JSON.stringify(data);
+      
+      const options = {
+        hostname: 'api.openai.com',
+        path: '/v1/chat/completions',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify(data),
-        signal: controller.signal as any // Force le type pour la compatibilité
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Length': Buffer.byteLength(requestData)
+        }
       };
 
-      const response = await fetch(OPENAI_CONFIG.baseURL, requestOptions);
-      clearTimeout(timeoutId);
+      const req = https.request(options, (res: any) => {
+        let responseData = '';
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      }
+        res.on('data', (chunk: any) => {
+          responseData += chunk;
+        });
 
-      const result = await response.json() as OpenAIResponse;
-      if (!result.choices?.[0]?.message?.content) {
-        throw new Error('Format de réponse OpenAI invalide');
-      }
-      return result.choices[0].message.content.trim();
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Erreur API OpenAI: ${error.message}`);
-      }
-      throw new Error('Une erreur inconnue est survenue');
-    }
+        res.on('end', () => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`Erreur HTTP: ${res.statusCode}`));
+            return;
+          }
+
+          try {
+            const result = JSON.parse(responseData) as OpenAIResponse;
+            if (!result.choices?.[0]?.message?.content) {
+              reject(new Error('Format de réponse OpenAI invalide'));
+              return;
+            }
+            resolve(result.choices[0].message.content.trim());
+          } catch (error) {
+            reject(new Error(`Erreur de parsing JSON: ${error}`));
+          }
+        });
+      });
+
+      req.on('error', (error: Error) => {
+        reject(new Error(`Erreur API OpenAI: ${error.message}`));
+      });
+
+      // Ajout du timeout
+      req.setTimeout(OPENAI_CONFIG.timeout, () => {
+        req.destroy();
+        reject(new Error('Timeout de la requête'));
+      });
+
+      // Envoi des données
+      req.write(requestData);
+      req.end();
+    });
   }
 
   async analyzeCode(fileContent: string, fileName: string): Promise<string> {
