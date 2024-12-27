@@ -1,12 +1,15 @@
 {
   "name": "coc-myplugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "My awesome coc.nvim plugin",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "publish:patch": "npm version patch && npm publish",
+    "publish:minor": "npm version minor && npm publish",
+    "publish:major": "npm version major && npm publish"
   },
   "engines": {
     "coc": "^0.0.82"
