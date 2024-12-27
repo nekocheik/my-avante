@@ -1,7 +1,7 @@
-import { ExtensionContext, Uri, window, workspace, WorkspaceEdit } from "coc.nvim";
-import dotenv from 'dotenv';
-import fetch, { RequestInit } from 'node-fetch';
-import * as path from 'path';
+const { ExtensionContext, Uri, window, workspace, WorkspaceEdit } = require("coc.nvim");
+const dotenv = require('dotenv');
+const fetch = require('node-fetch');
+const path = require('path');
 dotenv.config();
 
 // Configuration OpenAI
