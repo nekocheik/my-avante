@@ -34,9 +34,9 @@
     "*"
   ],
   "devDependencies": {
+    "axios": "^1.7.9",
     "coc.nvim": "^0.0.83-next.9",
-    "dotenv": "^16.4.7",
-    "axios": "^1.7.9"
+    "dotenv": "^16.4.7"
   },
   "contributes": {
     "commands": [
@@ -61,6 +61,5 @@
         }
       }
     }
-  },
-  "dependencies": {}
+  }
 }
