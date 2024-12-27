@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "prepare": "npm run build"
   },
   "engines": {
     "coc": "^0.0.82"
@@ -15,6 +16,17 @@
     "vim",
     "neovim"
   ],
+  "files": [
+    "lib",
+    "README.md",
+    "package.json"
+  ],
+  "author": "votre_nom",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/votre-username/coc-myplugin.git"
+  },
   "activationEvents": [
     "*"
   ],
