@@ -15,6 +15,17 @@ const OPENAI_CONFIG = {
   timeout: 4000
 };
 
+// Définition des types
+type RequestInit = {
+  method: string;
+  headers: {
+    'Content-Type': string;
+    'Authorization': string;
+  };
+  body: string;
+  signal?: AbortSignal;
+};
+
 // Ajout des interfaces pour le typage
 interface OpenAIResponse {
   choices: Array<{
@@ -148,7 +159,7 @@ async function createIAFile(originalFilePath: string): Promise<void> {
     });
 
     window.showInformationMessage('Application des modifications...');
-    const workspaceEdit: WorkspaceEdit = {
+    const workspaceEdit = {
       changes: {
         [aiFilePath]: [
           {
@@ -160,7 +171,7 @@ async function createIAFile(originalFilePath: string): Promise<void> {
           }
         ]
       }
-    };
+    } as typeof WorkspaceEdit;
 
     await workspace.applyEdit(workspaceEdit);
     
@@ -173,7 +184,7 @@ async function createIAFile(originalFilePath: string): Promise<void> {
   }
 }
 
-function shouldIgnoreFile(uri: Uri): boolean {
+function shouldIgnoreFile(uri: typeof Uri): boolean {
   const ignorePatterns = [
     'node_modules/**',
     '.env*',
@@ -206,7 +217,7 @@ function shouldIgnoreFile(uri: Uri): boolean {
   return shouldIgnore;
 }
 
-export async function activate(context: ExtensionContext): Promise<void> {
+export async function activate(context: typeof ExtensionContext): Promise<void> {
   try {
     console.log('Activation de l\'extension...');
     const files = await workspace.findFiles('**/*', '{**/.git/**,**/node_modules/**,**/*.ai}');
@@ -214,13 +225,13 @@ export async function activate(context: ExtensionContext): Promise<void> {
     console.log('Scan du workspace...');
     
     files
-      .filter(file => !shouldIgnoreFile(file))
-      .forEach(file => {
+      .filter((file: typeof Uri) => !shouldIgnoreFile(file))
+      .forEach((file: typeof Uri) => {
         console.log(`Fichier éligible trouvé: ${workspace.asRelativePath(file)}`);
       });
 
     context.subscriptions.push(
-      workspace.onDidOpenTextDocument(document => {
+      workspace.onDidOpenTextDocument((document: any) => {
         if (!document) return;
         
         const uri = document.uri;
