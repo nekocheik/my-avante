@@ -11,7 +11,7 @@ const OPENAI_CONFIG = {
     max_tokens: 3000,
     temperature: 0.3,
   },
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o-mini',
   timeout: 30000
 };
 
@@ -19,13 +19,17 @@ class OpenAIService {
   private client;
 
   constructor(apiKey: string) {
+    // Importer l'adaptateur HTTP de Node.js pour Axios
+    const httpAdapter = require('axios/lib/adapters/http');
+    
     this.client = axios.create({
       baseURL: OPENAI_CONFIG.baseURL,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      timeout: OPENAI_CONFIG.timeout
+      timeout: OPENAI_CONFIG.timeout,
+      adapter: httpAdapter // Utiliser l'adaptateur HTTP Node.js
     });
   }
 
