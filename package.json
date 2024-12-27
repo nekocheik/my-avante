@@ -28,7 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/votre-username/coc-myplugin.git"
+    "url": "git+https://github.com/nekocheik/my-avante.git"
   },
   "activationEvents": [
     "*"
