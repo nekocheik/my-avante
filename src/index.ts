@@ -25,13 +25,16 @@ class OpenAIService {
   }
 
   private _createClient() {
+    // Ajout de l'adaptateur node pour Axios
+    const adapter = require('axios/lib/adapters/http');
     return axios.create({
       baseURL: OPENAI_CONFIG.baseURL,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
-      timeout: OPENAI_CONFIG.timeout
+      timeout: OPENAI_CONFIG.timeout,
+      adapter: adapter // Spécification explicite de l'adaptateur
     });
   }
 
