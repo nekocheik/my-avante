@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ExtensionContext, Uri, window, workspace, WorkspaceEdit } from "coc.nvim";
 import dotenv from 'dotenv';
+import https from 'https';
 import * as path from 'path';
 dotenv.config();
 
@@ -12,7 +13,8 @@ const OPENAI_CONFIG = {
     temperature: 0.3,
   },
   model: 'gpt-4',
-  timeout: 30000
+  timeout: 30000,
+  httpsAgent: new https.Agent({ keepAlive: true })
 };
 
 class OpenAIService {
@@ -32,7 +34,8 @@ class OpenAIService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         data,
-        timeout: OPENAI_CONFIG.timeout
+        timeout: OPENAI_CONFIG.timeout,
+        httpsAgent: OPENAI_CONFIG.httpsAgent
       });
 
       if (!response.data.choices?.[0]?.message?.content) {
