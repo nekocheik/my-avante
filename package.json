@@ -35,10 +35,10 @@
     "*"
   ],
   "dependencies": {
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "axios": "^1.7.9"
   },
   "devDependencies": {
-    "axios": "^1.7.9",
     "coc.nvim": "^0.0.83-next.9",
     "esbuild": "^0.24.2",
     "esbuild-node-externals": "^1.16.0"
