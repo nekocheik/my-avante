@@ -9,7 +9,8 @@
     "prepare": "npm run build",
     "publish:patch": "npm version patch && npm publish",
     "publish:minor": "npm version minor && npm publish",
-    "publish:major": "npm version major && npm publish"
+    "publish:major": "npm version major && npm publish",
+    "postinstall": "npm run build && cd out && npm install --production"
   },
   "engines": {
     "coc": "^0.0.82"
@@ -33,10 +34,14 @@
   "activationEvents": [
     "*"
   ],
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
   "devDependencies": {
     "axios": "^1.7.9",
     "coc.nvim": "^0.0.83-next.9",
-    "dotenv": "^16.4.7"
+    "esbuild": "^0.24.2",
+    "esbuild-node-externals": "^1.16.0"
   },
   "contributes": {
     "commands": [
