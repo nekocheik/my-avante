@@ -29,14 +29,8 @@ function shouldIgnoreFile(uri: Uri): boolean {
 
 export async function activate(context: ExtensionContext): Promise<void> {
   try {
-    // Utiliser les exclusions natives de coc.nvim
-    const pattern = {
-      '**/*': true,
-      '**/node_modules/**': false,
-      '**/.git/**': false
-    } as any;
-
-    const files = await workspace.findFiles(pattern);
+    // Simplification du pattern pour workspace.findFiles
+    const files = await workspace.findFiles('**/*', '{**/.git/**,**/node_modules/**}');
     
     console.info('Files in workspace:');
     files
