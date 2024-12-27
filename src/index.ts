@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { ExtensionContext, Uri, window, workspace, WorkspaceEdit } from "coc.nvim";
 import dotenv from 'dotenv';
+import * as https from 'https';
 import * as path from 'path';
 dotenv.config();
 
@@ -16,25 +16,64 @@ const OPENAI_CONFIG = {
 };
 
 class OpenAIService {
-  private client;
+  private apiKey: string;
 
   constructor(apiKey: string) {
-    // Importer l'adaptateur HTTP de Node.js pour Axios
-    const httpAdapter = require('axios/lib/adapters/http');
-    
-    this.client = axios.create({
-      baseURL: OPENAI_CONFIG.baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      timeout: OPENAI_CONFIG.timeout,
-      adapter: httpAdapter // Utiliser l'adaptateur HTTP Node.js
+    this.apiKey = apiKey;
+  }
+
+  private makeRequest(data: any): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.openai.com',
+        path: '/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let responseData = '';
+
+        res.on('data', (chunk) => {
+          responseData += chunk;
+        });
+
+        res.on('end', () => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`OpenAI API error: ${res.statusCode} - ${responseData}`));
+            return;
+          }
+
+          try {
+            const parsedData = JSON.parse(responseData);
+            if (!parsedData.choices?.[0]?.message?.content) {
+              reject(new Error('Format de réponse OpenAI invalide'));
+              return;
+            }
+            resolve(parsedData.choices[0].message.content.trim());
+          } catch (error) {
+            reject(new Error(`Erreur de parsing JSON: ${error}`));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      req.write(JSON.stringify(data));
+      req.end();
     });
   }
 
   async analyzeCode(fileContent: string, fileName: string): Promise<string> {
-    const prompt = `Tu es un assistant IA expert en analyse de code. Ta tâche est de générer un fichier d'identité au format JSON pour le fichier suivant :
+    try {
+      window.showInformationMessage('Début de l\'analyse du code...');
+      
+      const prompt = `Tu es un assistant IA expert en analyse de code. Ta tâche est de générer un fichier d'identité au format JSON pour le fichier suivant :
 
 ${fileContent}
 
@@ -45,16 +84,26 @@ Le fichier d'identité doit contenir :
 - droits
 - proprietaire`;
 
-    const response = await this.client.post('', {
-      model: OPENAI_CONFIG.model,
-      messages: [
-        { role: "system", content: "Tu es un expert en analyse de code." },
-        { role: "user", content: prompt }
-      ],
-      ...OPENAI_CONFIG.defaultParams
-    });
+      window.showInformationMessage('Envoi de la requête à OpenAI...');
+      
+      const requestData = {
+        model: OPENAI_CONFIG.model,
+        messages: [
+          { role: "system", content: "Tu es un expert en analyse de code." },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: OPENAI_CONFIG.defaultParams.max_tokens,
+        temperature: OPENAI_CONFIG.defaultParams.temperature
+      };
 
-    return response.data.choices[0].message.content.trim();
+      const response = await this.makeRequest(requestData);
+      window.showInformationMessage('Réponse reçue d\'OpenAI');
+      
+      return response;
+    } catch (error) {
+      window.showErrorMessage(`Erreur lors de l'analyse du code: ${error}`);
+      throw error;
+    }
   }
 }
 
