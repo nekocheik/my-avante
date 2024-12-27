@@ -1,0 +1,48 @@
+{
+  "name": "coc-myplugin",
+  "version": "0.0.1",
+  "description": "My awesome coc.nvim plugin",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "engines": {
+    "coc": "^0.0.82"
+  },
+  "keywords": [
+    "coc.nvim",
+    "vim",
+    "neovim"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "devDependencies": {
+    "coc.nvim": "^0.0.83-next.9"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "myplugin.helloWorld",
+        "title": "Say Hello World"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "MyPlugin Configuration",
+      "properties": {
+        "myplugin.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable my plugin"
+        },
+        "myplugin.mySetting": {
+          "type": "string",
+          "default": "defaultValue",
+          "description": "Some setting for my plugin"
+        }
+      }
+    }
+  }
+}
