@@ -16,7 +16,7 @@ function shouldIgnoreFile(uri: Uri): boolean {
     '*.lock'
   ];
 
-  const relativePath = workspace.asRelativePath(uri.fsPath);
+  const relativePath = workspace.asRelativePath(uri);
   
   return ignorePatterns.some(pattern => {
     const regexPattern = pattern
@@ -36,7 +36,8 @@ async function createIAFile(originalFilePath: string): Promise<void> {
     );
 
     // Utiliser l'API correcte de workspace pour créer le fichier
-    await workspace.createFile(iaFilePath, { ignoreIfExists: true });
+    const createFile = workspace.createFile(iaFilePath, { overwrite: false, ignoreIfExists: true });
+    await createFile;
     window.showInformationMessage(`Fichier IA créé: ${iaFilePath}`);
   } catch (error) {
     window.showErrorMessage(`Erreur lors de la création du fichier IA: ${error}`);
@@ -48,23 +49,22 @@ export async function activate(context: ExtensionContext): Promise<void> {
     // Utiliser le bon format pour workspace.findFiles
     const files = await workspace.findFiles('**/*', '{**/.git/**,**/node_modules/**}');
     
-    // Utiliser window.showInformationMessage au lieu de console.info
     window.showInformationMessage('Scan du workspace...');
     
     files
       .filter(file => !shouldIgnoreFile(file))
       .forEach(file => {
-        window.showInformationMessage(`Fichier trouvé: ${workspace.asRelativePath(file.fsPath)}`);
+        window.showInformationMessage(`Fichier trouvé: ${workspace.asRelativePath(file)}`);
       });
 
     // Ajouter l'écouteur d'événements pour la création des fichiers .ia
     context.subscriptions.push(
       workspace.onDidOpenTextDocument(document => {
-        if (!document || !document.uri) return;
+        if (!document) return;
         
-        const filePath = document.uri.fsPath;
-        if (!filePath.endsWith('.ia')) {
-          createIAFile(filePath).catch(error => {
+        const uri = document.uri;
+        if (typeof uri === 'string' && !uri.endsWith('.ia')) {
+          createIAFile(uri).catch(error => {
             window.showErrorMessage(`Erreur: ${error}`);
           });
         }
