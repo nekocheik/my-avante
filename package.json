@@ -1,6 +1,6 @@
 {
   "name": "coc-myplugin",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "My awesome coc.nvim plugin",
   "main": "lib/index.js",
   "scripts": {
