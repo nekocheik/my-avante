@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { ExtensionContext, Uri, window, workspace, WorkspaceEdit } from "coc.nvim";
 import dotenv from 'dotenv';
+import fetch, { RequestInit } from 'node-fetch';
 import * as path from 'path';
 dotenv.config();
 
@@ -15,41 +15,54 @@ const OPENAI_CONFIG = {
   timeout: 4000
 };
 
+// Ajout des interfaces pour le typage
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
 class OpenAIService {
   private apiKey: string;
-  private client: any;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.client = this._createClient();
-  }
-
-  private _createClient() {
-    // Ajout de l'adaptateur node pour Axios
-    const adapter = require('axios/lib/adapters/http');
-    return axios.create({
-      baseURL: OPENAI_CONFIG.baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      timeout: OPENAI_CONFIG.timeout,
-      adapter: adapter // Spécification explicite de l'adaptateur
-    });
   }
 
   private async makeRequest(data: any): Promise<string> {
     try {
-      const response = await this.client.post('', data);
-      if (!response.data.choices?.[0]?.message?.content) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), OPENAI_CONFIG.timeout);
+
+      const requestOptions: RequestInit = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal as any // Force le type pour la compatibilité
+      };
+
+      const response = await fetch(OPENAI_CONFIG.baseURL, requestOptions);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      const result = await response.json() as OpenAIResponse;
+      if (!result.choices?.[0]?.message?.content) {
         throw new Error('Format de réponse OpenAI invalide');
       }
-      return response.data.choices[0].message.content.trim();
+      return result.choices[0].message.content.trim();
     } catch (error) {
-      if (axios.isAxiosError(error)) {
+      if (error instanceof Error) {
         throw new Error(`Erreur API OpenAI: ${error.message}`);
       }
-      throw error;
+      throw new Error('Une erreur inconnue est survenue');
     }
   }
 
