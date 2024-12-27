@@ -11,7 +11,7 @@ const OPENAI_CONFIG = {
     max_tokens: 3000,
     temperature: 0.3,
   },
-  model: 'gpt-4o-mini',
+  model: 'gpt-4',
   timeout: 30000
 };
 
@@ -109,31 +109,34 @@ Le fichier d'identité doit contenir :
 
 async function createIAFile(originalFilePath: string): Promise<void> {
   try {
+    window.showInformationMessage('Début de la création du fichier IA...');
+    
     const cleanPath = originalFilePath.replace(/^file:\/\//, '');
     const workspaceRoot = workspace.root;
     const relativePath = path.relative(workspaceRoot, cleanPath);
     
-    // Lire le contenu du fichier source
+    window.showInformationMessage('Lecture du fichier source...');
     const fileContent = await workspace.readFile(originalFilePath);
     
-    // Analyser le code avec OpenAI
+    window.showInformationMessage('Initialisation du service OpenAI...');
     const openAI = new OpenAIService(process.env.OPENAI_API_KEY || '');
+    
+    window.showInformationMessage('Analyse du code en cours...');
     const analysis = await openAI.analyzeCode(fileContent.toString(), path.basename(relativePath));
 
-    // Créer le chemin pour le fichier .ia
     const iaFilePath = path.join(
       workspaceRoot,
       path.dirname(relativePath),
       `${path.basename(relativePath)}.ia`
     );
 
-    // Créer le fichier
+    window.showInformationMessage('Création du fichier IA...');
     await workspace.createFile(iaFilePath, { 
       overwrite: true, 
       ignoreIfExists: false 
     });
 
-    // Créer un WorkspaceEdit pour modifier le contenu du fichier
+    window.showInformationMessage('Application des modifications...');
     const workspaceEdit: WorkspaceEdit = {
       changes: {
         [iaFilePath]: [
@@ -148,12 +151,14 @@ async function createIAFile(originalFilePath: string): Promise<void> {
       }
     };
 
-    // Appliquer les modifications
     await workspace.applyEdit(workspaceEdit);
     
-    window.showInformationMessage(`Fichier IA créé: ${workspace.asRelativePath(iaFilePath)}`);
+    window.showInformationMessage(`Fichier IA créé avec succès: ${workspace.asRelativePath(iaFilePath)}`);
   } catch (error) {
     window.showErrorMessage(`Erreur lors de la création du fichier IA: ${error}`);
+    if (error instanceof Error) {
+      window.showErrorMessage(`Stack trace: ${error.stack}`);
+    }
   }
 }
 
