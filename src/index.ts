@@ -29,15 +29,19 @@ function shouldIgnoreFile(uri: Uri): boolean {
 
 async function createIAFile(originalFilePath: string): Promise<void> {
   try {
-    const parsedPath = path.parse(originalFilePath);
+    const cleanPath = originalFilePath.replace(/^file:\/\//, '');
+    
+    const parsedPath = path.parse(cleanPath);
     const iaFilePath = path.join(
       parsedPath.dir,
       `${parsedPath.name}${parsedPath.ext}.ia`
     );
 
-    // Utiliser l'API correcte de workspace pour créer le fichier
-    const createFile = workspace.createFile(iaFilePath, { overwrite: false, ignoreIfExists: true });
-    await createFile;
+    await workspace.createFile(iaFilePath, { 
+      overwrite: false, 
+      ignoreIfExists: true 
+    });
+    
     window.showInformationMessage(`Fichier IA créé: ${iaFilePath}`);
   } catch (error) {
     window.showErrorMessage(`Erreur lors de la création du fichier IA: ${error}`);
@@ -46,7 +50,6 @@ async function createIAFile(originalFilePath: string): Promise<void> {
 
 export async function activate(context: ExtensionContext): Promise<void> {
   try {
-    // Utiliser le bon format pour workspace.findFiles
     const files = await workspace.findFiles('**/*', '{**/.git/**,**/node_modules/**}');
     
     window.showInformationMessage('Scan du workspace...');
@@ -57,7 +60,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
         window.showInformationMessage(`Fichier trouvé: ${workspace.asRelativePath(file)}`);
       });
 
-    // Ajouter l'écouteur d'événements pour la création des fichiers .ia
     context.subscriptions.push(
       workspace.onDidOpenTextDocument(document => {
         if (!document) return;
