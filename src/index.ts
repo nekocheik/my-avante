@@ -2,7 +2,6 @@ import { ExtensionContext, Uri, window, workspace } from "coc.nvim";
 import * as path from 'path';
 
 function shouldIgnoreFile(uri: Uri): boolean {
-  // Patterns à ignorer
   const ignorePatterns = [
     'node_modules/**',
     '.env*',
@@ -36,40 +35,45 @@ async function createIAFile(originalFilePath: string): Promise<void> {
       `${parsedPath.name}${parsedPath.ext}.ia`
     );
 
-    // Créer le fichier .ia vide
+    // Utiliser l'API correcte de workspace pour créer le fichier
     await workspace.createFile(iaFilePath, { ignoreIfExists: true });
-    console.info(`Fichier IA créé: ${iaFilePath}`);
+    window.showInformationMessage(`Fichier IA créé: ${iaFilePath}`);
   } catch (error) {
-    console.error('Erreur lors de la création du fichier IA:', error);
+    window.showErrorMessage(`Erreur lors de la création du fichier IA: ${error}`);
   }
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
   try {
-    // Simplification du pattern pour workspace.findFiles
+    // Utiliser le bon format pour workspace.findFiles
     const files = await workspace.findFiles('**/*', '{**/.git/**,**/node_modules/**}');
     
-    console.info('Files in workspace:');
+    // Utiliser window.showInformationMessage au lieu de console.info
+    window.showInformationMessage('Scan du workspace...');
+    
     files
       .filter(file => !shouldIgnoreFile(file))
       .forEach(file => {
-        console.info(`- ${workspace.asRelativePath(file.fsPath)}`);
+        window.showInformationMessage(`Fichier trouvé: ${workspace.asRelativePath(file.fsPath)}`);
       });
 
-    window.showMessage(`Scan du workspace terminé`);
-  } catch (error) {
-    console.error('Erreur lors de la recherche des fichiers:', error);
-  }
+    // Ajouter l'écouteur d'événements pour la création des fichiers .ia
+    context.subscriptions.push(
+      workspace.onDidOpenTextDocument(document => {
+        if (!document || !document.uri) return;
+        
+        const filePath = document.uri.fsPath;
+        if (!filePath.endsWith('.ia')) {
+          createIAFile(filePath).catch(error => {
+            window.showErrorMessage(`Erreur: ${error}`);
+          });
+        }
+      })
+    );
 
-  // Ajouter l'écouteur d'événements pour la création des fichiers .ia
-  context.subscriptions.push(
-    workspace.onDidOpenTextDocument(async document => {
-      const filePath = document.uri;
-      if (!filePath.endsWith('.ia')) {  // Éviter la récursion
-        await createIAFile(filePath);
-      }
-    })
-  );
+  } catch (error) {
+    window.showErrorMessage(`Erreur lors du scan: ${error}`);
+  }
 }
 
 export function deactivate(): void {}
