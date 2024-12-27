@@ -30,11 +30,13 @@ function shouldIgnoreFile(uri: Uri): boolean {
 async function createIAFile(originalFilePath: string): Promise<void> {
   try {
     const cleanPath = originalFilePath.replace(/^file:\/\//, '');
+    const workspaceRoot = workspace.root;
+    const relativePath = path.relative(workspaceRoot, cleanPath);
     
-    const parsedPath = path.parse(cleanPath);
     const iaFilePath = path.join(
-      parsedPath.dir,
-      `${parsedPath.name}${parsedPath.ext}.ia`
+      workspaceRoot,
+      path.dirname(relativePath),
+      `${path.basename(relativePath)}.ia`
     );
 
     await workspace.createFile(iaFilePath, { 
@@ -42,7 +44,7 @@ async function createIAFile(originalFilePath: string): Promise<void> {
       ignoreIfExists: true 
     });
     
-    window.showInformationMessage(`Fichier IA créé: ${iaFilePath}`);
+    window.showInformationMessage(`Fichier IA créé: ${workspace.asRelativePath(iaFilePath)}`);
   } catch (error) {
     window.showErrorMessage(`Erreur lors de la création du fichier IA: ${error}`);
   }
